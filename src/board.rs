@@ -146,6 +146,16 @@ impl Cell {
         }
     }
 
+    fn mark_solved(&mut self, value: u8) {
+        assert!(
+            value >= 1 && value <= 9,
+            "{}, got {value}",
+            ValueError::BadValue
+        );
+
+        self.allowed = 1 | (1 << value);
+    }
+
     fn remove(&mut self, value: u8) {
         assert!(
             value >= 1 && value <= 9,
@@ -194,6 +204,8 @@ impl Board {
                 self.cells[usize::from(other.x)][usize::from(other.y)].remove(value);
             }
         }
+
+        self.cells[usize::from(row)][usize::from(column)].mark_solved(value);
 
         Ok(())
     }
