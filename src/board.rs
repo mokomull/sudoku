@@ -47,3 +47,26 @@ pub enum LocationError {
     #[error("indexes must be between 0 and 8, inclusive")]
     BadIndex,
 }
+
+#[derive(Clone, Copy)]
+struct Cell {
+    // a bitmask representing which values this cell may have.  bit 1 (i.e. the value two)
+    // represents the digit '1', bit 2 (i.e. the value four) represents the digit '2', ...,
+    // bit 9 (value 512) represents the digit '9'.
+    allowed: u16,
+}
+
+pub struct Board {
+    cells: [[Cell; 3]; 3],
+}
+
+impl Default for Board {
+    fn default() -> Self {
+        Self {
+            cells: [[Cell {
+                // all nine values allowed
+                allowed: 0b11_1111_1110,
+            }; 3]; 3],
+        }
+    }
+}
