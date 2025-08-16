@@ -85,10 +85,29 @@ impl Location {
     }
 }
 
-#[derive(Debug, Error)]
+#[derive(serde::Serialize, Debug, Error)]
+#[wasm_bindgen]
 pub enum LocationError {
     #[error("indexes must be between 0 and 8, inclusive")]
     BadIndex,
+}
+
+#[derive(serde::Serialize, Debug, Error)]
+#[wasm_bindgen]
+pub enum ValueError {
+    #[error("the value of a cell must be between 1 and 9, inclusive")]
+    BadValue,
+}
+
+// TODO: this really doesn't need to be an enum of enums, unless I *actually* use LocationError or
+// ValueError somewhere else.  If not, then just collapse this and we can get rid of tsify.
+#[derive(serde::Serialize, tsify::Tsify, Debug, Error)]
+#[tsify(into_wasm_abi)]
+pub enum SolveError {
+    #[error(transparent)]
+    Location(#[from] LocationError),
+    #[error(transparent)]
+    Value(#[from] ValueError),
 }
 
 #[derive(Clone, Copy)]
@@ -126,6 +145,16 @@ impl Cell {
             )
         }
     }
+
+    fn remove(&mut self, value: u8) {
+        assert!(
+            value >= 1 && value <= 9,
+            "{}, got {value}",
+            ValueError::BadValue
+        );
+
+        self.allowed &= !(1 << value);
+    }
 }
 
 #[wasm_bindgen]
@@ -151,5 +180,21 @@ impl Board {
             .iter()
             .flat_map(|row| row.iter().map(|cell| cell.to_js()))
             .collect()
+    }
+
+    pub fn mark_cell_solved(&mut self, row: u8, column: u8, value: u8) -> Result<(), SolveError> {
+        let location = Location::try_new(row, column)?;
+
+        if value < 1 || value > 9 {
+            return Err(ValueError::BadValue.into());
+        }
+
+        for coordinate in location.coordinates() {
+            for other in coordinate.others_except(location) {
+                self.cells[usize::from(other.x)][usize::from(other.y)].remove(value);
+            }
+        }
+
+        Ok(())
     }
 }
