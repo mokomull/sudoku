@@ -1,14 +1,55 @@
+#[cfg(test)]
+mod test;
+
 use thiserror::Error;
 use wasm_bindgen::prelude::*;
 
 use Coordinate::*;
 
+#[derive(Debug)]
 pub enum Coordinate {
     Row(u8),
     Column(u8),
     Block(u8),
 }
 
+impl Coordinate {
+    fn locations(&self) -> impl Iterator<Item = Location> {
+        (0..9).into_iter().map(move |i| match *self {
+            Row(x) => Location { x, y: i },
+            Column(y) => Location { x: i, y },
+            Block(i) => {
+                let dx = i / 3;
+                let dy = i % 3;
+
+                // this is the inverse of the function in Location::block()
+                let top_left = match i {
+                    0 => (0, 0),
+                    1 => (0, 3),
+                    2 => (0, 6),
+                    3 => (3, 0),
+                    4 => (3, 3),
+                    5 => (3, 6),
+                    6 => (6, 0),
+                    7 => (6, 3),
+                    8 => (6, 6),
+                    _ => panic!("we somehow got a block number that isn't real: {self:?}"),
+                };
+
+                Location {
+                    x: top_left.0 + dx,
+                    y: top_left.1 + dy,
+                }
+            }
+        })
+    }
+
+    fn others_except(&self, location: Location) -> impl Iterator<Item = Location> {
+        self.locations().filter(move |l| l != &location)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Location {
     x: u8,
     y: u8,
