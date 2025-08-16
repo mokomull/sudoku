@@ -123,7 +123,7 @@ impl Cell {
     fn to_js(&self) -> crate::Cell {
         if self.allowed & 1 != 0 {
             let masked = self.allowed & !1;
-            if !masked.count_ones() != 1 {
+            if masked.count_ones() != 1 {
                 panic!(
                     "Cell is \"solved\" but it has multiple bits set: 0x{:x}",
                     self.allowed
