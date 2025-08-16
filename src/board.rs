@@ -185,6 +185,11 @@ impl Default for Board {
 
 #[wasm_bindgen]
 impl Board {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn to_js(&self) -> Vec<crate::Cell> {
         self.cells
             .iter()
