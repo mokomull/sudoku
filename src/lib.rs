@@ -7,3 +7,8 @@ pub enum Cell {
     Solved(String),
     Choices(String),
 }
+
+#[wasm_bindgen::prelude::wasm_bindgen(start)]
+fn install_panic_hook() {
+    console_error_panic_hook::set_once();
+}
