@@ -1,4 +1,8 @@
+use std::collections::BTreeSet;
+
 use super::*;
+
+use itertools::Itertools;
 
 #[test]
 /// This is an exhaustive test that, for all 81 valid locations, the Row, Column, and Block that the
@@ -16,4 +20,16 @@ fn coordinate_locations_must_contain_location() {
             }
         }
     }
+}
+
+#[test]
+/// This is one example Block, which is used to debug coordinate_locations_must_contain_location.
+fn locations_in_block_0() {
+    // block 0 is the top left block, so should contain x = (0..=2), y = (0..=2)
+    let expected_locations = (0..=2)
+        .cartesian_product(0..=2)
+        .map(|(x, y)| Location { x, y })
+        .collect::<BTreeSet<_>>();
+    let actual_locations = Block(0).locations().collect::<BTreeSet<_>>();
+    assert_eq!(expected_locations, actual_locations);
 }

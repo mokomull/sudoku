@@ -49,7 +49,7 @@ impl Coordinate {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Location {
     x: u8,
     y: u8,
