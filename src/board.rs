@@ -18,12 +18,12 @@ impl Coordinate {
         (0..9).into_iter().map(move |i| match *self {
             Row(x) => Location { x, y: i },
             Column(y) => Location { x: i, y },
-            Block(i) => {
+            Block(b) => {
                 let dx = i / 3;
                 let dy = i % 3;
 
                 // this is the inverse of the function in Location::block()
-                let top_left = match i {
+                let top_left = match b {
                     0 => (0, 0),
                     1 => (0, 3),
                     2 => (0, 6),
@@ -65,6 +65,7 @@ impl Location {
     }
 
     fn block(&self) -> u8 {
+        // this is the inverse of Coordinate::locations().
         match (self.x / 3, self.y / 3) {
             (0, 0) => 0,
             (0, 1) => 1,
