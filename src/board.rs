@@ -57,7 +57,7 @@ struct Cell {
 }
 
 pub struct Board {
-    cells: [[Cell; 3]; 3],
+    cells: [[Cell; 9]; 9],
 }
 
 impl Default for Board {
@@ -66,7 +66,7 @@ impl Default for Board {
             cells: [[Cell {
                 // all nine values allowed
                 allowed: 0b11_1111_1110,
-            }; 3]; 3],
+            }; _]; _],
         }
     }
 }
