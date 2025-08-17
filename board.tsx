@@ -3,6 +3,8 @@ import { JSX, RefObject, useRef, useState } from 'react'
 import { Board as WasmBoard } from './pkg'
 import Cell from './Cell.tsx'
 
+import './Board.css'
+
 function Board() {
     // this is the "Avoiding recreating the ref contents" example, but with an additional type hint
     // so that TypeScript can know what I'm *going* to put in it.

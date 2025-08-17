@@ -1,0 +1,51 @@
+.board {
+    display: grid;
+    grid-template-columns: repeat(9, max-content);
+}
+
+.cell {
+    display: grid;
+    grid-template-columns: repeat(3, 1em);
+    grid-template-rows: repeat(3, 1em);
+    border-top: 1px solid black;
+    border-left: 1px solid black;
+    box-sizing: border-box;
+}
+
+/* from here to ***, this makes every third row and column have a wider border.  this can't be done
+with grid gap, because you can't have custom gap per row/column, and this is still easier than
+manually setting grid positions to add a dummy border row in between the blocks of cells. */
+
+.cell:nth-child(3n+1) {
+    border-left: 3px solid black;
+}
+
+/* is there really no easy way to match 28..=36 but not 37..=54? */
+.cell:nth-child(27n+1),
+.cell:nth-child(27n+2),
+.cell:nth-child(27n+3),
+.cell:nth-child(27n+4),
+.cell:nth-child(27n+5),
+.cell:nth-child(27n+6),
+.cell:nth-child(27n+7),
+.cell:nth-child(27n+8),
+.cell:nth-child(27n+9) {
+    border-top: 3px solid black;
+}
+
+.cell:nth-child(9n+0) {
+    border-right: 3px solid black;
+}
+
+.cell:nth-last-child(-n+9) {
+    border-bottom: 3px solid black;
+}
+
+/* *** */
+
+.cell div {
+    width: 1em;
+    height: 1em;
+    align-self: center;
+    text-align: center;
+}
