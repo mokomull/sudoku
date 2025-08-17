@@ -23,7 +23,7 @@ function Board() {
             children.push(
                 // TODO: is the key *really* needed, since this list never actually changes?
                 // the warning sent me to https://react.dev/learn/rendering-lists#why-does-react-need-keys
-                <Cell key={index} state={children[index]} />
+                <Cell key={index} state={cells[index]} />
             )
         }
     }
