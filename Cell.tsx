@@ -1,8 +1,9 @@
+import { JSX } from 'react';
+
 import { Cell as WasmCell } from './pkg'
 
 export default function Cell({ state }: { state: WasmCell }) {
-    // TODO: another any just to make the red squiggle go away
-    let children: any[] = [];
+    let children: JSX.Element[] = [];
     if ("Solved" in state) {
         children = [<div className="solved">state.Solved</div>];
     } else {

@@ -1,4 +1,4 @@
-import { RefObject, useRef, useState } from 'react'
+import { JSX, RefObject, useRef, useState } from 'react'
 
 import { Board as WasmBoard } from './pkg'
 import Cell from './Cell.tsx'
@@ -13,9 +13,7 @@ function Board() {
 
     const [cells, setCells] = useState(() => boardRef.current!.to_js());
 
-    // TODO: how do I express the type of the inner React element?  any is my escape hatch for now,
-    // because it's what TS inferred before eslint told me to use the [] syntax instead of Array().
-    const children: any[] = [];
+    const children: JSX.Element[] = [];
     for (let x = 0; x < 9; ++x) {
         for (let y = 0; y < 9; ++y) {
             const index = x * 9 + y;
