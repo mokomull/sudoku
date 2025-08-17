@@ -8,7 +8,7 @@ export default function Cell({ state }: { state: WasmCell }) {
         children = [<div className="solved">state.Solved</div>];
     } else {
         for (const choice of state.Choices) {
-            children.push(<div className="choice-{choice}">{choice}</div>)
+            children.push(<div className={"choice-" + choice}>{choice}</div>)
         }
     }
 
