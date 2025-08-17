@@ -47,5 +47,12 @@ manually setting grid positions to add a dummy border row in between the blocks 
     width: 1em;
     height: 1em;
     align-self: center;
+    justify-self: center;
     text-align: center;
+}
+
+.cell .solved {
+    grid-row: 1 / 4;
+    grid-column: 1 / 4;
+    font-size: 2em;
 }
