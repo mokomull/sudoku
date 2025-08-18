@@ -2,7 +2,7 @@ import { JSX } from 'react';
 
 import { Cell as WasmCell } from './pkg'
 
-export default function Cell({ state }: { state: WasmCell }) {
+export default function Cell({ state, onUpdate }: { state: WasmCell, onUpdate: (value: number) => void }) {
     let children: JSX.Element[] = [];
     if ("Solved" in state) {
         children = [<div key="solved" className="solved">{state.Solved}</div>];
@@ -12,5 +12,13 @@ export default function Cell({ state }: { state: WasmCell }) {
         }
     }
 
-    return <div className="cell" tabIndex={-1}>{children}</div>
+    const onKeyUp = function(e) {
+        const value = parseInt(e.key);
+        if (isNaN(value)) {
+            return;
+        }
+        onUpdate(value);
+    }
+
+    return <div className="cell" tabIndex={-1} onKeyUp={onKeyUp}>{children}</div>
 };

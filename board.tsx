@@ -19,11 +19,15 @@ function Board() {
     for (let x = 0; x < 9; ++x) {
         for (let y = 0; y < 9; ++y) {
             const index = x * 9 + y;
+            const onUpdate = function (value) {
+                boardRef.current!.mark_cell_solved(x, y, value);
+                setCells(boardRef.current!.to_js());
+            }
 
             children.push(
                 // TODO: is the key *really* needed, since this list never actually changes?
                 // the warning sent me to https://react.dev/learn/rendering-lists#why-does-react-need-keys
-                <Cell key={index} state={cells[index]} />
+                <Cell key={index} state={cells[index]} onUpdate={onUpdate} />
             )
         }
     }
