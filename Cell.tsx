@@ -1,8 +1,20 @@
-import { JSX, KeyboardEventHandler } from 'react';
+import { JSX, KeyboardEventHandler, RefObject } from 'react';
 
 import { Cell as WasmCell } from './pkg'
 
-export default function Cell({ state, onUpdate }: { state: WasmCell, onUpdate: (value: number) => void }) {
+type Go = () => void;
+
+type CellProps = {
+    state: WasmCell,
+    ref: RefObject<HTMLDivElement | null>,
+    onUpdate: (value: number) => void,
+    goLeft: Go,
+    goRight: Go,
+    goUp: Go,
+    goDown: Go
+};
+
+export default function Cell({ state, ref, onUpdate, goLeft, goRight, goUp, goDown }: CellProps) {
     let children: JSX.Element[] = [];
     if ("Solved" in state) {
         children = [<div key="solved" className="solved">{state.Solved}</div>];
@@ -13,6 +25,27 @@ export default function Cell({ state, onUpdate }: { state: WasmCell, onUpdate: (
     }
 
     const onKeyUp: KeyboardEventHandler = function (e) {
+        // Keyboard navigation mostly because bouncing between the keyboard and mouse is annoying.
+        switch (e.key) {
+            case "ArrowRight":
+                goRight();
+                e.stopPropagation();
+                return;
+            case "ArrowLeft":
+                goLeft();
+                e.stopPropagation();
+                return;
+            case "ArrowUp":
+                goUp();
+                e.stopPropagation();
+                return;
+            case "ArrowDown":
+                goDown();
+                e.stopPropagation();
+                return;
+        }
+
+        // and if it isn't a navigation key, then maybe it's a number that we should use!
         const value = parseInt(e.key);
         if (isNaN(value)) {
             return;
@@ -21,5 +54,5 @@ export default function Cell({ state, onUpdate }: { state: WasmCell, onUpdate: (
         e.stopPropagation();
     }
 
-    return <div className="cell" tabIndex={-1} onKeyUp={onKeyUp}>{children}</div>
+    return <div ref={ref} className="cell" tabIndex={-1} onKeyUp={onKeyUp}>{children}</div>
 };
