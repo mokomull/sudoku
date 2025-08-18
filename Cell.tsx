@@ -1,4 +1,4 @@
-import { JSX } from 'react';
+import { JSX, KeyboardEventHandler } from 'react';
 
 import { Cell as WasmCell } from './pkg'
 
@@ -12,12 +12,13 @@ export default function Cell({ state, onUpdate }: { state: WasmCell, onUpdate: (
         }
     }
 
-    const onKeyUp = function(e) {
+    const onKeyUp: KeyboardEventHandler = function (e) {
         const value = parseInt(e.key);
         if (isNaN(value)) {
             return;
         }
         onUpdate(value);
+        e.stopPropagation();
     }
 
     return <div className="cell" tabIndex={-1} onKeyUp={onKeyUp}>{children}</div>
