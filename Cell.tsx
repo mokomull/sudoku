@@ -12,5 +12,5 @@ export default function Cell({ state }: { state: WasmCell }) {
         }
     }
 
-    return <div className="cell">{children}</div>
+    return <div className="cell" tabIndex={-1}>{children}</div>
 };

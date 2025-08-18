@@ -10,6 +10,11 @@
     border-top: 1px solid black;
     border-left: 1px solid black;
     box-sizing: border-box;
+    user-select: none;
+}
+
+.cell:focus {
+    background-color: #aaa;
 }
 
 /* from here to ***, this makes every third row and column have a wider border.  this can't be done
