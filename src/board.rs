@@ -108,6 +108,8 @@ pub enum SolveError {
     Location(#[from] LocationError),
     #[error(transparent)]
     Value(#[from] ValueError),
+    #[error("the cell does not allow this value")]
+    WrongValueForCell,
 }
 
 #[derive(Clone, Copy)]
@@ -144,6 +146,16 @@ impl Cell {
                     .collect(),
             )
         }
+    }
+
+    fn allows(&self, value: u8) -> bool {
+        assert!(
+            value >= 1 && value <= 9,
+            "{}, got {value}",
+            ValueError::BadValue
+        );
+
+        self.allowed & (1 << value) > 0
     }
 
     fn mark_solved(&mut self, value: u8) {
@@ -224,6 +236,10 @@ impl Board {
 
         if value < 1 || value > 9 {
             return Err(ValueError::BadValue.into());
+        }
+
+        if !self.cell_at(location).allows(value) {
+            return Err(SolveError::WrongValueForCell);
         }
 
         let mut affected_neighbors = vec![];
