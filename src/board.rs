@@ -156,20 +156,31 @@ impl Cell {
         self.allowed = 1 | (1 << value);
     }
 
-    fn remove(&mut self, value: u8) {
+    fn remove(&mut self, value: u8) -> bool {
         assert!(
             value >= 1 && value <= 9,
             "{}, got {value}",
             ValueError::BadValue
         );
 
+        let had_it = (self.allowed & (1 << value)) > 0;
         self.allowed &= !(1 << value);
+
+        had_it
     }
+}
+
+struct UndoNode {
+    location: Location,
+    value: u8,
+    previous_allowed: u16,
+    affected_neighbors: Vec<Location>,
 }
 
 #[wasm_bindgen]
 pub struct Board {
     cells: [[Cell; 9]; 9],
+    undo_stack: Vec<UndoNode>,
 }
 
 impl Default for Board {
@@ -179,7 +190,18 @@ impl Default for Board {
                 // all nine values allowed
                 allowed: 0b11_1111_1110,
             }; _]; _],
+            undo_stack: vec![],
         }
+    }
+}
+
+impl Board {
+    fn cell_at(&self, location: Location) -> &Cell {
+        &self.cells[usize::from(location.x)][usize::from(location.y)]
+    }
+
+    fn cell_at_mut(&mut self, location: Location) -> &mut Cell {
+        &mut self.cells[usize::from(location.x)][usize::from(location.y)]
     }
 }
 
@@ -204,13 +226,39 @@ impl Board {
             return Err(ValueError::BadValue.into());
         }
 
+        let mut affected_neighbors = vec![];
         for coordinate in location.coordinates() {
             for other in coordinate.others_except(location) {
-                self.cells[usize::from(other.x)][usize::from(other.y)].remove(value);
+                if self.cell_at_mut(other).remove(value) {
+                    affected_neighbors.push(other);
+                }
             }
         }
 
-        self.cells[usize::from(row)][usize::from(column)].mark_solved(value);
+        let cell = self.cell_at_mut(location);
+        let previous_allowed = cell.allowed;
+        cell.mark_solved(value);
+
+        self.undo_stack.push(UndoNode {
+            location,
+            value,
+            previous_allowed,
+            affected_neighbors,
+        });
+
+        Ok(())
+    }
+
+    pub fn undo(&mut self) -> Result<(), JsError> {
+        let Some(undo_node) = self.undo_stack.pop() else {
+            return Err(JsError::new("undo stack is empty"));
+        };
+
+        for other in undo_node.affected_neighbors {
+            self.cell_at_mut(other).allowed |= 1 << undo_node.value;
+        }
+
+        self.cell_at_mut(undo_node.location).allowed = undo_node.previous_allowed;
 
         Ok(())
     }

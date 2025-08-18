@@ -1,4 +1,4 @@
-import { JSX, RefObject, useRef, useState } from 'react'
+import { JSX, KeyboardEventHandler, RefObject, useRef, useState } from 'react'
 
 import { Board as WasmBoard } from './pkg'
 import Cell from './Cell.tsx'
@@ -58,7 +58,16 @@ function Board() {
         }
     }
 
-    return <div className='board'>
+    const onKeyDown: KeyboardEventHandler = function (e) {
+        if (e.key == "z" && (e.ctrlKey || e.metaKey)) {
+            boardRef.current!.undo();
+            setCells(boardRef.current!.to_js());
+            e.preventDefault();
+            return;
+        }
+    };
+
+    return <div className='board' onKeyDown={onKeyDown}>
         {children}
     </div>;
 }
