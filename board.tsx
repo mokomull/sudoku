@@ -1,7 +1,7 @@
 import { JSX, KeyboardEventHandler, RefObject, useRef, useState } from 'react'
 
 import { Board as WasmBoard } from './pkg'
-import Cell from './Cell.tsx'
+import Cell, { HighlightContext } from './Cell.tsx'
 
 import './Board.css'
 
@@ -14,6 +14,7 @@ function Board() {
     }
 
     const [cells, setCells] = useState(() => boardRef.current!.to_js());
+    const [highlight, setHighlight] = useState(null as string | null);
 
     const children: JSX.Element[] = [];
     const childRefs: RefObject<HTMLDivElement | null>[] = [];
@@ -67,8 +68,27 @@ function Board() {
         }
     };
 
-    return <div className='board' onKeyDown={onKeyDown}>
-        {children}
+    const onKeyUp: KeyboardEventHandler = function (e) {
+        if (e.key == "Escape") {
+            setHighlight(null);
+            e.stopPropagation();
+            return;
+        }
+
+        if (e.shiftKey && e.code.startsWith("Digit") && e.code.length == 6) {
+            const value = parseInt(e.code.substring(5));
+            if (!isNaN(value)) {
+                setHighlight("" + value);
+                e.stopPropagation();
+                return;
+            }
+        }
+    }
+
+    return <div className='board' onKeyDown={onKeyDown} onKeyUp={onKeyUp}>
+        <HighlightContext value={highlight}>
+            {children}
+        </HighlightContext>
     </div>;
 }
 

@@ -1,4 +1,4 @@
-import { JSX, KeyboardEventHandler, RefObject } from 'react';
+import { Context, createContext, JSX, KeyboardEventHandler, RefObject, useContext } from 'react';
 
 import { Cell as WasmCell } from './pkg'
 
@@ -14,13 +14,19 @@ type CellProps = {
     goDown: Go
 };
 
+export const HighlightContext = createContext(null as string | null);
+
 export default function Cell({ state, ref, onUpdate, goLeft, goRight, goUp, goDown }: CellProps) {
     let children: JSX.Element[] = [];
+    const highlight = useContext(HighlightContext);
+    var highlightWholeCellClass = "";
     if ("Solved" in state) {
+        highlightWholeCellClass = (highlight == state.Solved) ? " highlighted" : "";
         children = [<div key="solved" className="solved">{state.Solved}</div>];
     } else {
         for (const choice of state.Choices) {
-            children.push(<div key={choice} className={"choice-" + choice}>{choice}</div>)
+            const highlightClass = (highlight == choice) ? " highlighted" : "";
+            children.push(<div key={choice} className={"choice-" + choice + highlightClass}>{choice}</div>)
         }
     }
 
@@ -54,5 +60,5 @@ export default function Cell({ state, ref, onUpdate, goLeft, goRight, goUp, goDo
         e.stopPropagation();
     }
 
-    return <div ref={ref} className="cell" tabIndex={-1} onKeyUp={onKeyUp}>{children}</div>
+    return <div ref={ref} className={"cell" + highlightWholeCellClass} tabIndex={-1} onKeyUp={onKeyUp}>{children}</div>
 };

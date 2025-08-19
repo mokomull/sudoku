@@ -101,6 +101,10 @@ manually setting grid positions to add a dummy border row in between the blocks 
     grid-column: 3;
 }
 
+.board .highlighted {
+    background-color: lightgreen;
+}
+
 .cell .solved {
     grid-row: 1 / 4;
     grid-column: 1 / 4;
