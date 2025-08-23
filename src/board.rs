@@ -19,7 +19,7 @@ pub enum Coordinate {
 
 impl Coordinate {
     pub fn locations(&self) -> impl Iterator<Item = Location> {
-        (0..9).into_iter().map(move |i| match *self {
+        (0..9).map(move |i| match *self {
             Row(x) => Location { x, y: i },
             Column(y) => Location { x: i, y },
             Block(b) => {
@@ -139,7 +139,7 @@ impl Cell {
         }
     }
 
-    fn to_js(&self) -> crate::Cell {
+    fn to_js(self) -> crate::Cell {
         if self.allowed & 1 != 0 {
             let masked = self.allowed & !1;
             if masked.count_ones() != 1 {
@@ -152,7 +152,6 @@ impl Cell {
         } else {
             crate::Cell::Choices(
                 (1..=9)
-                    .into_iter()
                     .filter_map(|bit| {
                         if self.allowed & (1 << bit) != 0 {
                             Some(bit.to_string())
@@ -167,7 +166,7 @@ impl Cell {
 
     fn allows(&self, value: u8) -> bool {
         assert!(
-            value >= 1 && value <= 9,
+            (1..=9).contains(&value),
             "{}, got {value}",
             ValueError::BadValue
         );
@@ -177,7 +176,7 @@ impl Cell {
 
     fn mark_solved(&mut self, value: u8) {
         assert!(
-            value >= 1 && value <= 9,
+            (1..=9).contains(&value),
             "{}, got {value}",
             ValueError::BadValue
         );
@@ -187,7 +186,7 @@ impl Cell {
 
     fn remove(&mut self, value: u8) -> bool {
         assert!(
-            value >= 1 && value <= 9,
+            (1..=9).contains(&value),
             "{}, got {value}",
             ValueError::BadValue
         );
@@ -255,7 +254,7 @@ impl Board {
     pub fn mark_cell_solved(&mut self, row: u8, column: u8, value: u8) -> Result<(), SolveError> {
         let location = Location::try_new(row, column)?;
 
-        if value < 1 || value > 9 {
+        if !(1..=9).contains(&value) {
             return Err(ValueError::BadValue.into());
         }
 
@@ -301,10 +300,6 @@ impl Board {
     }
 
     pub fn hints(&self) -> Vec<Hint> {
-        RULES
-            .iter()
-            .map(|&rule| rule.check(self))
-            .flatten()
-            .collect()
+        RULES.iter().flat_map(|&rule| rule.check(self)).collect()
     }
 }
