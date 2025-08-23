@@ -8,6 +8,8 @@ use wasm_bindgen::prelude::*;
 
 use Coordinate::*;
 
+use crate::rules::{Hint, RULES};
+
 #[derive(Debug)]
 pub enum Coordinate {
     Row(u8),
@@ -52,6 +54,7 @@ impl Coordinate {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[wasm_bindgen]
 pub struct Location {
     x: u8,
     y: u8,
@@ -295,5 +298,13 @@ impl Board {
         self[undo_node.location].allowed = undo_node.previous_allowed;
 
         Ok(())
+    }
+
+    pub fn hints(&self) -> Vec<Hint> {
+        RULES
+            .iter()
+            .map(|&rule| rule.check(self))
+            .flatten()
+            .collect()
     }
 }

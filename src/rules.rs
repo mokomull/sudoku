@@ -1,5 +1,6 @@
 use itertools::Either;
 use itertools::Itertools;
+use wasm_bindgen::prelude::*;
 
 use crate::board::Board;
 use crate::board::Coordinate::*;
@@ -11,17 +12,23 @@ pub trait Rule {
 
 pub static RULES: &[&(dyn Rule + Sync)] = &[&DigitsCovered {}];
 
+#[derive(Clone)]
+#[wasm_bindgen]
 pub struct DigitLocation {
-    location: Location,
+    pub location: Location,
     // None if the cause is the whole cell; a non-empty Vec of digits (integers valued 1 through 9
     // inclusive) if it is specific digits within the cell.
-    digit: Option<Vec<u8>>,
+    #[wasm_bindgen(getter_with_clone, readonly)]
+    pub digit: Option<Vec<u8>>,
 }
 
+#[wasm_bindgen]
 pub struct Hint {
-    cause: Vec<DigitLocation>,
+    #[wasm_bindgen(getter_with_clone)]
+    pub cause: Vec<DigitLocation>,
     // effect: the possibilities that have been ruled-out due to this Rule.
-    effect: Vec<DigitLocation>,
+    #[wasm_bindgen(getter_with_clone)]
+    pub effect: Vec<DigitLocation>,
 }
 
 // Detect if digits are already covered in the same row, column, or block... e.g. if three cells
