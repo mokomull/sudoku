@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod test;
 
+use std::ops::{Index, IndexMut};
+
 use thiserror::Error;
 use wasm_bindgen::prelude::*;
 
@@ -113,7 +115,7 @@ pub enum SolveError {
 }
 
 #[derive(Clone, Copy)]
-struct Cell {
+pub struct Cell {
     // a bitmask representing which values this cell may have.  bit 1 (i.e. the value two)
     // represents the digit '1', bit 2 (i.e. the value four) represents the digit '2', ..., bit 9
     // (value 512) represents the digit '9'.  Bit 0 (i.e. value one) is set if this cell is "solved"
@@ -207,12 +209,16 @@ impl Default for Board {
     }
 }
 
-impl Board {
-    fn cell_at(&self, location: Location) -> &Cell {
+impl Index<Location> for Board {
+    type Output = Cell;
+
+    fn index(&self, location: Location) -> &Self::Output {
         &self.cells[usize::from(location.x)][usize::from(location.y)]
     }
+}
 
-    fn cell_at_mut(&mut self, location: Location) -> &mut Cell {
+impl IndexMut<Location> for Board {
+    fn index_mut(&mut self, location: Location) -> &mut Self::Output {
         &mut self.cells[usize::from(location.x)][usize::from(location.y)]
     }
 }
@@ -238,20 +244,20 @@ impl Board {
             return Err(ValueError::BadValue.into());
         }
 
-        if !self.cell_at(location).allows(value) {
+        if !self[location].allows(value) {
             return Err(SolveError::WrongValueForCell);
         }
 
         let mut affected_neighbors = vec![];
         for coordinate in location.coordinates() {
             for other in coordinate.others_except(location) {
-                if self.cell_at_mut(other).remove(value) {
+                if self[other].remove(value) {
                     affected_neighbors.push(other);
                 }
             }
         }
 
-        let cell = self.cell_at_mut(location);
+        let cell = &mut self[location];
         let previous_allowed = cell.allowed;
         cell.mark_solved(value);
 
@@ -271,10 +277,10 @@ impl Board {
         };
 
         for other in undo_node.affected_neighbors {
-            self.cell_at_mut(other).allowed |= 1 << undo_node.value;
+            self[other].allowed |= 1 << undo_node.value;
         }
 
-        self.cell_at_mut(undo_node.location).allowed = undo_node.previous_allowed;
+        self[undo_node.location].allowed = undo_node.previous_allowed;
 
         Ok(())
     }
