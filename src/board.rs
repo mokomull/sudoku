@@ -16,7 +16,7 @@ pub enum Coordinate {
 }
 
 impl Coordinate {
-    fn locations(&self) -> impl Iterator<Item = Location> {
+    pub fn locations(&self) -> impl Iterator<Item = Location> {
         (0..9).into_iter().map(move |i| match *self {
             Row(x) => Location { x, y: i },
             Column(y) => Location { x: i, y },
@@ -124,6 +124,18 @@ pub struct Cell {
 }
 
 impl Cell {
+    /// Returns Some(bitmask) if the cell is unsolved, or None if the cell is already solved.  This
+    /// somewhat leaks the abstraction, but bit 1 (i.e. the value two) represents the digit '1', bit
+    /// 2 (i.e. the value four) represents the digit '2', ..., bit 9 (value 512) represents the
+    /// digit '9'.
+    pub fn unsolved_allowed_values(&self) -> Option<u16> {
+        if self.allowed & 0x1 != 0 {
+            None
+        } else {
+            Some(self.allowed)
+        }
+    }
+
     fn to_js(&self) -> crate::Cell {
         if self.allowed & 1 != 0 {
             let masked = self.allowed & !1;
