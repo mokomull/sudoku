@@ -12,7 +12,7 @@ pub trait Rule {
 
 pub static RULES: &[&(dyn Rule + Sync)] = &[&OnlyOneAllowedValue {}, &DigitsCovered {}];
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 #[wasm_bindgen]
 pub struct DigitLocation {
     pub location: Location,
@@ -26,6 +26,8 @@ pub struct DigitLocation {
 pub struct Hint {
     #[wasm_bindgen(getter_with_clone, readonly)]
     pub description: String,
+    #[wasm_bindgen(getter_with_clone, readonly)]
+    pub identity: String,
     #[wasm_bindgen(getter_with_clone)]
     pub cause: Vec<DigitLocation>,
     // effect: the possibilities that have been ruled-out due to this Rule.
@@ -108,6 +110,7 @@ impl Rule for DigitsCovered {
                                 covering.len(),
                                 bits_to_digits(allowed).into_iter().join(", ")
                             ),
+                            identity: format!("digitscovered: {:?} {:?}", covering, affected),
                             cause: covering
                                 .into_iter()
                                 .map(|location| DigitLocation {
@@ -149,6 +152,7 @@ impl Rule for OnlyOneAllowedValue {
                     let value = allowed.trailing_zeros() as u8;
                     hints.push(Hint {
                         description: format!("cell can only contain the value {}", value),
+                        identity: format!("onlyoneallowedvalue: {:?} {}", location, value),
                         cause: vec![DigitLocation {
                             location,
                             digit: Some(vec![value]),

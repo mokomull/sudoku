@@ -10,7 +10,7 @@ type HintProps = {
 export default function ({ hint, onEnter, onLeave, commit }: HintProps) {
     return <div
         className="hint"
-        onMouseEnter={onEnter}
+        onMouseOver={onEnter}
         onMouseLeave={onLeave}
         onClick={commit}>
         {hint.description}

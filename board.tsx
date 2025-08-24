@@ -89,14 +89,14 @@ function Board() {
         const onEnter = function () {
             setSelectedHint(hint);
         }
-        const commit = function() {
+        const commit = function () {
             boardRef.current!.apply(hint);
             setCells(boardRef.current!.to_js());
             setSelectedHint(null);
         }
         hints.push(
             <Hint
-                // TODO: come up with a reasonable key here to quiet the React warning
+                key={hint.identity}
                 hint={hint}
                 onEnter={onEnter}
                 onLeave={onLeave}
