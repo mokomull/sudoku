@@ -302,6 +302,19 @@ impl Board {
     pub fn apply(&mut self, hint: &Hint) {
         let mut previous_allowed = BTreeMap::new();
 
+        // TODO: this is really dirty and probably needs to be modeled as an enum or better
+        // instructions, but for now, only OnlyOneAllowedValue sets any digits on the cause field.
+        for cause in &hint.cause {
+            if let Some(digits) = &cause.digit
+                && digits.len() == 1
+            {
+                // mark_cell_solved will do the right thing for the undo stack
+                return self
+                    .mark_cell_solved(cause.location.x, cause.location.y, digits[0])
+                    .expect("a hint object must be a valid move");
+            }
+        }
+
         for effect in &hint.effect {
             for &digit in effect
                 .digit

@@ -10,7 +10,7 @@ pub trait Rule {
     fn check(&self, board: &Board) -> Vec<Hint>;
 }
 
-pub static RULES: &[&(dyn Rule + Sync)] = &[&DigitsCovered {}];
+pub static RULES: &[&(dyn Rule + Sync)] = &[&OnlyOneAllowedValue {}, &DigitsCovered {}];
 
 #[derive(Clone)]
 #[wasm_bindgen]
@@ -128,4 +128,37 @@ impl Rule for DigitsCovered {
 
 fn bits_to_digits(allowed: u16) -> Vec<u8> {
     (1..=9).filter(|&i| allowed & (1 << i) != 0).collect()
+}
+
+// Emits a hint when a cell is not solved, but has only one allowed digit.
+struct OnlyOneAllowedValue {}
+
+impl Rule for OnlyOneAllowedValue {
+    fn check(&self, board: &Board) -> Vec<Hint> {
+        let mut hints = vec![];
+
+        for x in 0..9 {
+            for y in 0..9 {
+                let location = Location { x, y };
+
+                let Some(allowed) = board[location].unsolved_allowed_values() else {
+                    continue;
+                };
+
+                if allowed.count_ones() == 1 {
+                    let value = allowed.trailing_zeros() as u8;
+                    hints.push(Hint {
+                        description: format!("cell can only contain the value {}", value),
+                        cause: vec![DigitLocation {
+                            location,
+                            digit: Some(vec![value]),
+                        }],
+                        effect: vec![],
+                    })
+                }
+            }
+        }
+
+        hints
+    }
 }
