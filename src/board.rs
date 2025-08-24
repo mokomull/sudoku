@@ -1,7 +1,10 @@
 #[cfg(test)]
 mod test;
 
-use std::ops::{Index, IndexMut};
+use std::{
+    collections::BTreeMap,
+    ops::{Index, IndexMut},
+};
 
 use thiserror::Error;
 use wasm_bindgen::prelude::*;
@@ -297,7 +300,7 @@ impl Board {
     }
 
     pub fn apply(&mut self, hint: &Hint) {
-        let mut previous_allowed = vec![];
+        let mut previous_allowed = BTreeMap::new();
 
         for effect in &hint.effect {
             for &digit in effect
@@ -306,11 +309,14 @@ impl Board {
                 .expect("for now, the only rule doesn't leave this field None")
             {
                 if let Some(old) = self[effect.location].remove(digit) {
-                    previous_allowed.push((effect.location, old));
+                    previous_allowed.entry(effect.location).or_insert(old);
                 }
             }
         }
 
-        self.undo_stack.push(UndoNode { previous_allowed })
+        log::debug!("apply: adding undo node with {:?}", previous_allowed);
+        self.undo_stack.push(UndoNode {
+            previous_allowed: previous_allowed.into_iter().collect(),
+        })
     }
 }
