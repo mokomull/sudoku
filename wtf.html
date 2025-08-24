@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf8">
+    <style>
+        body {
+            max-width: 800px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>WTF is this?</h1>
+    <p>
+        This is a Sudoku solver specifically for how I, mokomull, have been manually solving them (and
+        using auto-hints for the "challenging" difficulty).
+    </p>
+    <h2>How do I use it?</h2>
+    <p>
+        The UI is not intended to be intuitive, and since it's built just for myself, I just deal with
+        the quirks. It's probably impossible to use without a mouse and keyboard, because I haven't
+        gotten <code>&lt;body&gt;</code> keyboard events wired up yet.
+    </p>
+    <p>
+        User input:
+    </p>
+    <ul>
+        <li>Click on any square to focus on it.</li>
+        <li>Type a number 1-9 to set that cell to that value. Invalid choices will be rejected.</li>
+        <li>Press shift+number to see all of the places where that digit is a valid choice.</li>
+        <li>Press Ctrl+Z or ⌘Z to undo what you just did.</li>
+        <li>Hover over a hint in the bottom section to see what it'll do.</li>
+        <li>Click on a hint in the bottom section to apply it to the board.</li>
+    </ul>
+    <p>
+        Reading the UI:
+    </p>
+    <ul>
+        <li>Big numbers are "solved" cells; that is, their value is known or given and all conflicting
+            allowable moves have been removed from the board.</li>
+        <li>Little numbers are the possible values that can go in that cell.</li>
+        <li>
+            Below the board is a list of hints that have been deduced from the current state of the
+            board. When hovering, cells are highlighted in
+            <ul>
+                <li>orange: the evidence from which the hint was deduced, and</li>
+                <li>green: the options that will be excluded from the board, should you choose to
+                accept this hint.</li>
+            </ul>
+        </li>
+</body>
