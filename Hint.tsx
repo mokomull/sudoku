@@ -1,5 +1,18 @@
 import { Hint as WasmHint } from './pkg';
 
-export default function ({ hint, onEnter, onLeave }: { hint: WasmHint, onEnter: () => void, onLeave: () => void }) {
-    return <div className="hint" onMouseEnter={onEnter} onMouseLeave={onLeave}>{hint.description}</div>
+type HintProps = {
+    hint: WasmHint,
+    onEnter: () => void,
+    onLeave: () => void,
+    commit: () => void,
+};
+
+export default function ({ hint, onEnter, onLeave, commit }: HintProps) {
+    return <div
+        className="hint"
+        onMouseEnter={onEnter}
+        onMouseLeave={onLeave}
+        onClick={commit}>
+        {hint.description}
+    </div>
 };

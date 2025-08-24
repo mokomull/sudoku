@@ -184,25 +184,25 @@ impl Cell {
         self.allowed = 1 | (1 << value);
     }
 
-    fn remove(&mut self, value: u8) -> bool {
+    fn remove(&mut self, value: u8) -> Option<u16> {
         assert!(
             (1..=9).contains(&value),
             "{}, got {value}",
             ValueError::BadValue
         );
 
-        let had_it = (self.allowed & (1 << value)) > 0;
-        self.allowed &= !(1 << value);
-
-        had_it
+        if (self.allowed & (1 << value)) > 0 {
+            let res = Some(self.allowed);
+            self.allowed &= !(1 << value);
+            res
+        } else {
+            None
+        }
     }
 }
 
 struct UndoNode {
-    location: Location,
-    value: u8,
-    previous_allowed: u16,
-    affected_neighbors: Vec<Location>,
+    previous_allowed: Vec<(Location, u16)>,
 }
 
 #[wasm_bindgen]
@@ -262,25 +262,20 @@ impl Board {
             return Err(SolveError::WrongValueForCell);
         }
 
-        let mut affected_neighbors = vec![];
+        let mut previous_allowed = vec![];
         for coordinate in location.coordinates() {
             for other in coordinate.others_except(location) {
-                if self[other].remove(value) {
-                    affected_neighbors.push(other);
+                if let Some(old) = self[other].remove(value) {
+                    previous_allowed.push((other, old));
                 }
             }
         }
 
         let cell = &mut self[location];
-        let previous_allowed = cell.allowed;
+        previous_allowed.push((location, cell.allowed));
         cell.mark_solved(value);
 
-        self.undo_stack.push(UndoNode {
-            location,
-            value,
-            previous_allowed,
-            affected_neighbors,
-        });
+        self.undo_stack.push(UndoNode { previous_allowed });
 
         Ok(())
     }
@@ -290,16 +285,32 @@ impl Board {
             return Err(JsError::new("undo stack is empty"));
         };
 
-        for other in undo_node.affected_neighbors {
-            self[other].allowed |= 1 << undo_node.value;
+        for (location, allowed) in undo_node.previous_allowed {
+            self[location].allowed = allowed;
         }
-
-        self[undo_node.location].allowed = undo_node.previous_allowed;
 
         Ok(())
     }
 
     pub fn hints(&self) -> Vec<Hint> {
         RULES.iter().flat_map(|&rule| rule.check(self)).collect()
+    }
+
+    pub fn apply(&mut self, hint: &Hint) {
+        let mut previous_allowed = vec![];
+
+        for effect in &hint.effect {
+            for &digit in effect
+                .digit
+                .as_ref()
+                .expect("for now, the only rule doesn't leave this field None")
+            {
+                if let Some(old) = self[effect.location].remove(digit) {
+                    previous_allowed.push((effect.location, old));
+                }
+            }
+        }
+
+        self.undo_stack.push(UndoNode { previous_allowed })
     }
 }
