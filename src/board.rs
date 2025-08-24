@@ -56,8 +56,8 @@ impl Coordinate {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[wasm_bindgen]
 pub struct Location {
-    x: u8,
-    y: u8,
+    pub x: u8,
+    pub y: u8,
 }
 
 impl Location {

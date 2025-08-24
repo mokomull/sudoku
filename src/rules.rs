@@ -24,6 +24,8 @@ pub struct DigitLocation {
 
 #[wasm_bindgen]
 pub struct Hint {
+    #[wasm_bindgen(getter_with_clone, readonly)]
+    pub description: String,
     #[wasm_bindgen(getter_with_clone)]
     pub cause: Vec<DigitLocation>,
     // effect: the possibilities that have been ruled-out due to this Rule.
@@ -91,7 +93,7 @@ impl Rule for DigitsCovered {
 
                         let overlap = other_allowed & allowed;
                         if overlap != 0 {
-                            let digits = (1..=9).filter(|&i| overlap & (1 << i) != 0).collect();
+                            let digits = bits_to_digits(overlap);
                             affected.push(DigitLocation {
                                 location: other,
                                 digit: Some(digits),
@@ -101,6 +103,11 @@ impl Rule for DigitsCovered {
 
                     if !affected.is_empty() {
                         hints.push(Hint {
+                            description: format!(
+                                "{} cells containing values {}",
+                                covering.len(),
+                                bits_to_digits(allowed).into_iter().join(", ")
+                            ),
                             cause: covering
                                 .into_iter()
                                 .map(|location| DigitLocation {
@@ -117,4 +124,8 @@ impl Rule for DigitsCovered {
 
         hints
     }
+}
+
+fn bits_to_digits(allowed: u16) -> Vec<u8> {
+    (1..=9).filter(|&i| allowed & (1 << i) != 0).collect()
 }

@@ -1,9 +1,10 @@
 import { JSX, KeyboardEventHandler, RefObject, useRef, useState } from 'react'
 
-import { Board as WasmBoard } from './pkg'
+import { Board as WasmBoard, Hint as WasmHint } from './pkg'
 import Cell, { HighlightContext } from './Cell.tsx'
 
 import './Board.css'
+import Hint from './Hint.tsx';
 
 function Board() {
     // this is the "Avoiding recreating the ref contents" example, but with an additional type hint
@@ -15,6 +16,7 @@ function Board() {
 
     const [cells, setCells] = useState(() => boardRef.current!.to_js());
     const [highlight, setHighlight] = useState(null as string | null);
+    const [selectedHint, setSelectedHint] = useState(null as WasmHint | null);
 
     const children: JSX.Element[] = [];
     const childRefs: RefObject<HTMLDivElement | null>[] = [];
@@ -38,6 +40,23 @@ function Board() {
                 }
             }
 
+            let cause: number[] | null = null;
+            let effect: number[] | null = null;
+            if (selectedHint !== null) {
+                // TODO: do something better than linear search
+                for (const causeLocation of selectedHint.cause) {
+                    if (causeLocation.location.x === x && causeLocation.location.y === y) {
+                        cause = Array.from(causeLocation.digit ?? []);
+                    }
+                }
+
+                for (const effectLocation of selectedHint.effect) {
+                    if (effectLocation.location.x === x && effectLocation.location.y === y) {
+                        effect = Array.from(effectLocation.digit ?? []);
+                    }
+                }
+            }
+
             // TODO: I *think* useRef depends on the order it's called, but since I always call it
             // exactly 81 times then this should be safe.  Is there a better way?
             const ref = useRef(null);
@@ -49,6 +68,8 @@ function Board() {
                     key={index}
                     ref={ref}
                     state={cells[index]}
+                    cause={cause}
+                    effect={effect}
                     onUpdate={onUpdate}
                     goLeft={makeGo(-1)}
                     goRight={makeGo(+1)}
@@ -57,6 +78,25 @@ function Board() {
                 />
             )
         }
+    }
+
+    const onLeave = function () {
+        setSelectedHint(null);
+    }
+
+    const hints: JSX.Element[] = [];
+    for (const hint of boardRef.current.hints()) {
+        const onEnter = function () {
+            setSelectedHint(hint);
+        }
+        hints.push(
+            <Hint
+                // TODO: come up with a reasonable key here to quiet the React warning
+                hint={hint}
+                onEnter={onEnter}
+                onLeave={onLeave}
+            />
+        );
     }
 
     const onKeyDown: KeyboardEventHandler = function (e) {
@@ -85,10 +125,15 @@ function Board() {
         }
     }
 
-    return <div className='board' onKeyDown={onKeyDown} onKeyUp={onKeyUp}>
-        <HighlightContext value={highlight}>
-            {children}
-        </HighlightContext>
+    return <div className="game">
+        <div className='board' onKeyDown={onKeyDown} onKeyUp={onKeyUp}>
+            <HighlightContext value={highlight}>
+                {children}
+            </HighlightContext>
+        </div>
+        <div className="hints">
+            {hints}
+        </div>
     </div>;
 }
 

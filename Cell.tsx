@@ -1,12 +1,14 @@
 import { Context, createContext, JSX, KeyboardEventHandler, RefObject, useContext } from 'react';
 
-import { Cell as WasmCell } from './pkg'
+import { DigitLocation, Cell as WasmCell } from './pkg'
 
 type Go = () => void;
 
 type CellProps = {
     state: WasmCell,
     ref: RefObject<HTMLDivElement | null>,
+    cause: number[] | null,
+    effect: number[] | null,
     onUpdate: (value: number) => void,
     goLeft: Go,
     goRight: Go,
@@ -16,7 +18,7 @@ type CellProps = {
 
 export const HighlightContext = createContext(null as string | null);
 
-export default function Cell({ state, ref, onUpdate, goLeft, goRight, goUp, goDown }: CellProps) {
+export default function Cell({ state, ref, cause, effect, onUpdate, goLeft, goRight, goUp, goDown }: CellProps) {
     let children: JSX.Element[] = [];
     const highlight = useContext(HighlightContext);
     var highlightWholeCellClass = "";
@@ -25,9 +27,23 @@ export default function Cell({ state, ref, onUpdate, goLeft, goRight, goUp, goDo
         children = [<div key="solved" className="solved">{state.Solved}</div>];
     } else {
         for (const choice of state.Choices) {
-            const highlightClass = (highlight == choice) ? " highlighted" : "";
+            let highlightClass = "";
+            if (cause !== null && cause.includes(parseInt(choice))) {
+                highlightClass = " cause";
+            } else if (effect !== null && effect.includes(parseInt(choice))) {
+                highlightClass = " highlighted";
+            } else if (highlight == choice) {
+                highlightClass = " highlighted";
+            }
             children.push(<div key={choice} className={"choice-" + choice + highlightClass}>{choice}</div>)
         }
+    }
+
+    // empty arrays of digits mean the whole cell
+    if (cause !== null && cause.length == 0) {
+        highlightWholeCellClass = " cause";
+    } else if (effect !== null && effect.length == 0) {
+        highlightWholeCellClass = " effect";
     }
 
     const onKeyUp: KeyboardEventHandler = function (e) {
