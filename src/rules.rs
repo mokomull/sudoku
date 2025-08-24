@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use itertools::Either;
 use itertools::Itertools;
 use wasm_bindgen::prelude::*;
@@ -12,7 +14,7 @@ pub trait Rule {
 
 pub static RULES: &[&(dyn Rule + Sync)] = &[&OnlyOneAllowedValue {}, &DigitsCovered {}];
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[wasm_bindgen]
 pub struct DigitLocation {
     pub location: Location,
@@ -43,6 +45,7 @@ struct DigitsCovered {}
 impl Rule for DigitsCovered {
     fn check(&self, board: &Board) -> Vec<Hint> {
         let mut hints = vec![];
+        let mut reported = BTreeSet::new();
 
         for i in 0..9 {
             for coordinate in [Row(i), Column(i), Block(i)] {
@@ -103,7 +106,8 @@ impl Rule for DigitsCovered {
                         }
                     }
 
-                    if !affected.is_empty() {
+                    if !affected.is_empty() && reported.insert((covering.clone(), affected.clone()))
+                    {
                         hints.push(Hint {
                             description: format!(
                                 "{} cells containing values {}",
