@@ -8,6 +8,7 @@ import topLevelAwait from "vite-plugin-top-level-await";
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
+  base: "./",
   plugins: [
     react(),
     wasm(),
