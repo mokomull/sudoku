@@ -1,4 +1,4 @@
-import { JSX, KeyboardEventHandler, useCallback, useEffect, useState, useSyncExternalStore } from 'react'
+import { JSX, KeyboardEventHandler, useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 
 import { Board as WasmBoard, Hint as WasmHint, Cell as WasmCell } from './pkg'
 import Cell, { HighlightContext } from './Cell.tsx'
@@ -177,7 +177,14 @@ function Board() {
         }
     }
 
+    const newGame = useMemo(() => {
+        const url = new URL(window.location.toString());
+        url.hash = "";
+        return url.toString();
+    }, [])
+
     return <div className="game">
+        <a href={newGame}>Start a new game!</a>
         <div className='board' onKeyDown={onKeyDown} onKeyUp={onKeyUp}>
             <HighlightContext value={highlight}>
                 {children}
