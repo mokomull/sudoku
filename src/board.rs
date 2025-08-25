@@ -2,10 +2,11 @@
 mod test;
 
 use std::{
-    collections::BTreeMap,
+    io::{Cursor, Read},
     ops::{Index, IndexMut},
 };
 
+use base64::{Engine, prelude::BASE64_STANDARD};
 use thiserror::Error;
 use wasm_bindgen::prelude::*;
 
@@ -120,7 +121,7 @@ pub enum SolveError {
     WrongValueForCell,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Cell {
     // a bitmask representing which values this cell may have.  bit 1 (i.e. the value two)
     // represents the digit '1', bit 2 (i.e. the value four) represents the digit '2', ..., bit 9
@@ -204,14 +205,9 @@ impl Cell {
     }
 }
 
-struct UndoNode {
-    previous_allowed: Vec<(Location, u16)>,
-}
-
 #[wasm_bindgen]
 pub struct Board {
     cells: [[Cell; 9]; 9],
-    undo_stack: Vec<UndoNode>,
 }
 
 impl Default for Board {
@@ -221,7 +217,6 @@ impl Default for Board {
                 // all nine values allowed
                 allowed: 0b11_1111_1110,
             }; _]; _],
-            undo_stack: vec![],
         }
     }
 }
@@ -247,6 +242,46 @@ impl Board {
         Self::default()
     }
 
+    pub fn to_slug(&self) -> String {
+        let binary = self
+            .cells
+            .iter()
+            .flat_map(|row| row.iter().flat_map(|cell| cell.allowed.to_le_bytes()))
+            .collect::<Vec<u8>>();
+        BASE64_STANDARD.encode(binary)
+    }
+
+    pub fn from_slug(slug: &str) -> Result<Self, JsError> {
+        let Ok(binary) = BASE64_STANDARD.decode(slug) else {
+            return Err(JsError::new("can't decode"));
+        };
+
+        let mut cursor = Cursor::new(&binary);
+
+        let mut rows = vec![];
+        for _row in 0..9 {
+            let mut values = vec![];
+            for _column in 0..9 {
+                let mut buffer = [0; 2];
+                let Ok(_) = cursor.read_exact(&mut buffer) else {
+                    return Err(JsError::new("bad length"));
+                };
+                values.push(Cell {
+                    allowed: u16::from_le_bytes(buffer),
+                });
+            }
+            rows.push(
+                values
+                    .try_into()
+                    .expect("nine iterations should fit in a length-9 array"),
+            );
+        }
+
+        Ok(Self {
+            cells: rows.try_into().expect("nine iterations oughtta make it"),
+        })
+    }
+
     pub fn to_js(&self) -> Vec<crate::Cell> {
         self.cells
             .iter()
@@ -265,32 +300,14 @@ impl Board {
             return Err(SolveError::WrongValueForCell);
         }
 
-        let mut previous_allowed = vec![];
         for coordinate in location.coordinates() {
             for other in coordinate.others_except(location) {
-                if let Some(old) = self[other].remove(value) {
-                    previous_allowed.push((other, old));
-                }
+                if let Some(_old) = self[other].remove(value) {}
             }
         }
 
         let cell = &mut self[location];
-        previous_allowed.push((location, cell.allowed));
         cell.mark_solved(value);
-
-        self.undo_stack.push(UndoNode { previous_allowed });
-
-        Ok(())
-    }
-
-    pub fn undo(&mut self) -> Result<(), JsError> {
-        let Some(undo_node) = self.undo_stack.pop() else {
-            return Err(JsError::new("undo stack is empty"));
-        };
-
-        for (location, allowed) in undo_node.previous_allowed {
-            self[location].allowed = allowed;
-        }
 
         Ok(())
     }
@@ -300,8 +317,6 @@ impl Board {
     }
 
     pub fn apply(&mut self, hint: &Hint) {
-        let mut previous_allowed = BTreeMap::new();
-
         // TODO: this is really dirty and probably needs to be modeled as an enum or better
         // instructions, but for now, only OnlyOneAllowedValue sets any digits on the cause field.
         for cause in &hint.cause {
@@ -321,15 +336,8 @@ impl Board {
                 .as_ref()
                 .expect("for now, the only rule doesn't leave this field None")
             {
-                if let Some(old) = self[effect.location].remove(digit) {
-                    previous_allowed.entry(effect.location).or_insert(old);
-                }
+                self[effect.location].remove(digit);
             }
         }
-
-        log::debug!("apply: adding undo node with {:?}", previous_allowed);
-        self.undo_stack.push(UndoNode {
-            previous_allowed: previous_allowed.into_iter().collect(),
-        })
     }
 }

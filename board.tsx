@@ -1,22 +1,74 @@
-import { JSX, KeyboardEventHandler, RefObject, useRef, useState } from 'react'
+import { JSX, KeyboardEventHandler, RefObject, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
-import { Board as WasmBoard, Hint as WasmHint } from './pkg'
+import { Board as WasmBoard, Hint as WasmHint, Cell as WasmCell } from './pkg'
 import Cell, { HighlightContext } from './Cell.tsx'
 
 import './Board.css'
 import Hint from './Hint.tsx';
 
-function Board() {
-    // this is the "Avoiding recreating the ref contents" example, but with an additional type hint
-    // so that TypeScript can know what I'm *going* to put in it.
-    const boardRef: RefObject<WasmBoard | null> = useRef(null);
-    if (boardRef.current === null) {
-        boardRef.current = new WasmBoard();
+class ExternalBoard {
+    board: WasmBoard;
+    callback: null | (() => void);
+    cache: null | WasmCell[];
+
+    constructor(slug: string | null) {
+        if (slug !== null && slug != "") {
+            this.board = WasmBoard.from_slug(slug);
+        } else {
+            this.board = new WasmBoard();
+        }
+
+        this.callback = null;
     }
 
-    const [cells, setCells] = useState(() => boardRef.current!.to_js());
+    subscribe(cb) {
+        this.callback = cb;
+        return () => {
+            this.callback = null;
+        }
+    }
+
+    fetch() {
+        if (!this.cache) {
+            this.cache = this.board.to_js();
+        }
+        return this.cache;
+    }
+
+    signal() {
+        this.cache = null;
+        history.pushState(this.board.to_slug(), "", "#" + this.board.to_slug());
+        if (this.callback !== null) {
+            this.callback();
+        }
+    }
+}
+
+function Board() {
+    const [board, setBoard] = useState(() => {
+        if (window.location.hash.startsWith("#")) {
+            return new ExternalBoard(window.location.hash.substring(1));
+        } else {
+            return new ExternalBoard("");
+        }
+    });
+    const subscribe = useCallback((cb) => board.subscribe(cb), [board]);
+    const getSnapshot = useCallback(() => board.fetch(), [board]);
+    const cells = useSyncExternalStore(subscribe, getSnapshot);
+
     const [highlight, setHighlight] = useState(null as string | null);
     const [selectedHint, setSelectedHint] = useState(null as WasmHint | null);
+
+    useEffect(
+        function () {
+            const listener = function (e) {
+                setBoard(new ExternalBoard(e.state));
+            };
+            window.addEventListener('popstate', listener);
+            return () => window.removeEventListener('popstate', listener);
+        },
+        [setBoard]
+    )
 
     const children: JSX.Element[] = [];
     const childRefs: RefObject<HTMLDivElement | null>[] = [];
@@ -24,8 +76,8 @@ function Board() {
         for (let y = 0; y < 9; ++y) {
             const index = x * 9 + y;
             const onUpdate = function (value) {
-                boardRef.current!.mark_cell_solved(x, y, value);
-                setCells(boardRef.current!.to_js());
+                board.board.mark_cell_solved(x, y, value);
+                board.signal();
             }
 
             const makeGo: (number) => (() => void) = function (step) {
@@ -85,13 +137,13 @@ function Board() {
     }
 
     const hints: JSX.Element[] = [];
-    for (const hint of boardRef.current.hints()) {
+    for (const hint of board.board.hints()) {
         const onEnter = function () {
             setSelectedHint(hint);
         }
         const commit = function () {
-            boardRef.current!.apply(hint);
-            setCells(boardRef.current!.to_js());
+            board.board.apply(hint);
+            board.signal();
             setSelectedHint(null);
         }
         hints.push(
@@ -107,8 +159,7 @@ function Board() {
 
     const onKeyDown: KeyboardEventHandler = function (e) {
         if (e.key == "z" && (e.ctrlKey || e.metaKey)) {
-            boardRef.current!.undo();
-            setCells(boardRef.current!.to_js());
+            history.back();
             e.preventDefault();
             return;
         }
