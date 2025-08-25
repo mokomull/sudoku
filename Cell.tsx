@@ -1,4 +1,4 @@
-import { Context, createContext, JSX, KeyboardEventHandler, RefObject, useContext } from 'react';
+import { createContext, JSX, KeyboardEventHandler, useContext, useEffect, useRef } from 'react';
 
 import { DigitLocation, Cell as WasmCell } from './pkg'
 
@@ -6,7 +6,7 @@ type Go = () => void;
 
 type CellProps = {
     state: WasmCell,
-    ref: RefObject<HTMLDivElement | null>,
+    kbFocusRequested: boolean,
     cause: number[] | null,
     effect: number[] | null,
     onUpdate: (value: number) => void,
@@ -18,7 +18,14 @@ type CellProps = {
 
 export const HighlightContext = createContext(null as string | null);
 
-export default function Cell({ state, ref, cause, effect, onUpdate, goLeft, goRight, goUp, goDown }: CellProps) {
+export default function Cell({ state, kbFocusRequested, cause, effect, onUpdate, goLeft, goRight, goUp, goDown }: CellProps) {
+    const domRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        if (kbFocusRequested) {
+            domRef.current?.focus();
+        }
+    }, [kbFocusRequested]);
+
     let children: JSX.Element[] = [];
     const highlight = useContext(HighlightContext);
     var highlightWholeCellClass = "";
@@ -76,5 +83,5 @@ export default function Cell({ state, ref, cause, effect, onUpdate, goLeft, goRi
         e.stopPropagation();
     }
 
-    return <div ref={ref} className={"cell" + highlightWholeCellClass} tabIndex={-1} onKeyUp={onKeyUp}>{children}</div>
+    return <div ref={domRef} className={"cell" + highlightWholeCellClass} tabIndex={-1} onKeyUp={onKeyUp}>{children}</div>
 };

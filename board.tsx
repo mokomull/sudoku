@@ -1,4 +1,4 @@
-import { JSX, KeyboardEventHandler, RefObject, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { JSX, KeyboardEventHandler, useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 
 import { Board as WasmBoard, Hint as WasmHint, Cell as WasmCell } from './pkg'
 import Cell, { HighlightContext } from './Cell.tsx'
@@ -58,6 +58,7 @@ function Board() {
 
     const [highlight, setHighlight] = useState(null as string | null);
     const [selectedHint, setSelectedHint] = useState(null as WasmHint | null);
+    const [kbFocusIndex, setKbFocusIndex] = useState(-1);
 
     useEffect(
         function () {
@@ -71,7 +72,6 @@ function Board() {
     )
 
     const children: JSX.Element[] = [];
-    const childRefs: RefObject<HTMLDivElement | null>[] = [];
     for (let x = 0; x < 9; ++x) {
         for (let y = 0; y < 9; ++y) {
             const index = x * 9 + y;
@@ -87,8 +87,7 @@ function Board() {
                         // trying to navigate outside the board, so just ignore it.
                         return;
                     }
-
-                    childRefs[newIndex]?.current?.focus();
+                    setKbFocusIndex(newIndex);
                 }
             }
 
@@ -109,16 +108,12 @@ function Board() {
                 }
             }
 
-            // TODO: I *think* useRef depends on the order it's called, but since I always call it
-            // exactly 81 times then this should be safe.  Is there a better way?
-            const ref = useRef(null);
-            childRefs.push(ref);
             children.push(
                 // TODO: is the key *really* needed, since this list never actually changes?
                 // the warning sent me to https://react.dev/learn/rendering-lists#why-does-react-need-keys
                 <Cell
                     key={index}
-                    ref={ref}
+                    kbFocusRequested={index === kbFocusIndex}
                     state={cells[index]}
                     cause={cause}
                     effect={effect}
